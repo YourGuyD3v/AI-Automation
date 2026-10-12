@@ -53,17 +53,6 @@ inspect and change.
 **Trade-off:** credentials, request formats, provider APIs, and model
 availability must be maintained individually.
 
-## Server-side console proxy
-
-The browser talks to same-origin Vercel API routes rather than calling n8n or
-provider APIs directly.
-
-**Reason:** avoid exposing the n8n endpoint/auth configuration in browser
-requests and avoid cross-origin browser calls.
-
-**Trade-off:** the console requires serverless deployment configuration and
-does not itself provide full end-user identity/authorization.
-
 ## Structured planning and results
 
 The production planner creates discrete instructions for scenes and asset

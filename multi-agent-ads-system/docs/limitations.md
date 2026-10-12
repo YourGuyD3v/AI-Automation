@@ -10,14 +10,9 @@
   and final renders need review before advertising use or publication.
 - **Stateful routing:** main workflow routing depends on persisted project
   state. Inconsistent or stale state can send messages to an unexpected stage.
-- **Progress is latest-value only:** the optional Upstash integration stores
-  only the newest update per project and expires it after one day. It is not a
-  durable run history.
 - **Console access is not user identity:** `CONSOLE_TOKEN` gates the server
   routes using a shared value; it does not provide per-user authentication,
   roles, or campaign ownership.
-- **No local automated test suite:** verification currently relies on n8n
-  execution tests and the manual console/API smoke test.
 - **Provider/media policy:** generated material can have quality, licensing,
   likeness, platform-policy, and brand-safety concerns that are outside the
   workflow's technical status checks.
