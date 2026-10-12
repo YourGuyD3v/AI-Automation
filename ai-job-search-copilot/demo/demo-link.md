@@ -2,7 +2,5 @@
 
 AI Job Search Copilot Demo.
 
-Example:
-
-- Demo URL: https://example.com/demo
+- Demo URL: https://youtu.be/iQToCTKGi6E?si=SvQiIoaF7H66i4Nx
 - Notes: Show the workflow overview and sample job output.

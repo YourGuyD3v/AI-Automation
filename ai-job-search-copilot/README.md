@@ -1,5 +1,7 @@
 # AI Job Search Copilot
 
+<img width="7500" height="5000" alt="Cartoon man and robot sitting at laptops in workplace together" src="https://github.com/user-attachments/assets/a1e42fee-a07b-44fb-b6a5-628bd650ea5b" />
+
 This project automates the process of discovering, filtering, and qualifying job opportunities with an AI-assisted workflow built in n8n. It combines web research, structured job extraction, duplicate handling, candidate matching, and user-facing reporting via Telegram and PDF delivery.
 
 ## What this workflow does
