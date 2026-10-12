@@ -1,0 +1,29 @@
+[
+  {
+    "ok": true,
+    "result": {
+      "message_id": 25,
+      "from": {
+        "id": "",
+        "is_bot": true,
+        "first_name": "Job search",
+        "username": "Job_search_ss_bot"
+      },
+      "chat": {
+        "id": "",
+        "first_name": "",
+        "username": "",
+        "type": "private"
+      },
+      "date": 1789235040,
+      "document": {
+        "file_name": "htmltopdf.pdf",
+        "mime_type": "application/pdf",
+        "file_id": "BQACAgQAAxkDAAMZaqWPYOZC8Lt0vDUDJ71oIjxZFlAAAkgLAALNvi1Rz3d4cPiAgic9BA",
+        "file_unique_id": "AgADSAsAAs2-LVE",
+        "file_size": 218591
+      },
+      "caption": "Job opportunities report pdf  Job Log / AI Automation 2026-09-12T00:00:00.000-07:00"
+    }
+  }
+]

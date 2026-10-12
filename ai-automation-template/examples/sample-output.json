@@ -1,0 +1,13 @@
+[
+  {
+    "id": "example-001",
+    "title": "Example Result",
+    "source": "Example Source",
+    "status": "pending",
+    "category": "Example Category",
+    "recommendation": "review",
+    "confidence_score": 0.88,
+    "summary": "Short summary of the result or match.",
+    "notes": "Add your real output fields here."
+  }
+]

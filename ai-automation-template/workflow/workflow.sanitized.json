@@ -1,0 +1,11 @@
+{
+  "name": "[Project Name]",
+  "description": "Add a short description of the workflow here.",
+  "version": "1.0.0",
+  "nodes": [],
+  "connections": {},
+  "meta": {
+    "purpose": "Describe what this workflow automates.",
+    "updated": "2026-09-14"
+  }
+}
