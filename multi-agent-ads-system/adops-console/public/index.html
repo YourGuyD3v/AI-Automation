@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Production Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EDEFF2; --bg-2:#E2E5EA; --panel:#FFFFFF; --panel-border:#D6DAE1;
+    --text:#14181F; --text-secondary:#565F6E; --accent:#B96A16; --accent-soft:#F6EADA;
+    --pass:#1F8A56; --fail:#C43B3B; --wait:#A3720F; --line:#C7CCD4; --rail:#AEB4BD;
+    --shadow:0 1px 2px rgba(20,24,31,.06); --bubble-user:#14181F; --bubble-user-text:#FFFFFF;
+  }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+    --bg:#0E1116; --bg-2:#11151C; --panel:#161B22; --panel-border:#2A3340;
+    --text:#E6E8EB; --text-secondary:#8B94A3; --accent:#F0A202; --accent-soft:#2C2413;
+    --pass:#3DDC84; --fail:#FF6B6B; --wait:#F0A202; --line:#2A3340; --rail:#3A4453;
+    --shadow:0 1px 2px rgba(0,0,0,.4); --bubble-user:#F0A202; --bubble-user-text:#0E1116;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0E1116; --bg-2:#11151C; --panel:#161B22; --panel-border:#2A3340;
+    --text:#E6E8EB; --text-secondary:#8B94A3; --accent:#F0A202; --accent-soft:#2C2413;
+    --pass:#3DDC84; --fail:#FF6B6B; --wait:#F0A202; --line:#2A3340; --rail:#3A4453;
+    --shadow:0 1px 2px rgba(0,0,0,.4); --bubble-user:#F0A202; --bubble-user-text:#0E1116;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+    font-size:14px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;font-weight:600;margin:0;line-height:1.2;}
+  button{font-family:inherit;cursor:pointer;}
+  input,textarea,select{font-family:inherit;font-size:13px;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  ::selection{background:var(--accent);color:var(--bg);}
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 18px;border-bottom:1px solid var(--line);background:var(--bg);
+    position:sticky;top:0;z-index:30;flex-wrap:wrap;
+  }
+  .mark{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;}
+  .mark span{color:var(--accent);}
+  .topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .conn{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text-secondary);}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--rail);flex:0 0 auto;}
+  .dot.live{background:var(--pass);}
+  .dot.err{background:var(--fail);}
+  .dot.demo{background:var(--wait);}
+  .btn{
+    border:1px solid var(--panel-border);background:var(--panel);color:var(--text);
+    padding:7px 12px;font-size:12.5px;border-radius:3px;
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500;}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#0E1116;}}
+  .btn.ghost{background:transparent;}
+  .btn.danger{color:var(--fail);border-color:var(--fail);background:transparent;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+
+  /* ---------- LAYOUT ---------- */
+  .shell{
+    display:grid;grid-template-columns:300px minmax(0,1fr) 290px;
+    height:calc(100vh - 53px);max-width:1500px;margin:0 auto;
+  }
+  @media (max-width:1100px){ .shell{grid-template-columns:1fr;height:auto;} }
+
+  .col{overflow-y:auto;min-width:0;}
+  .col.left{border-right:1px solid var(--line);padding:18px 16px 40px;}
+  .col.right{border-left:1px solid var(--line);padding:18px 16px 40px;}
+  .col.center{display:flex;flex-direction:column;min-height:0;}
+  @media (max-width:1100px){
+    .col{overflow:visible;}
+    .col.left,.col.right{border:none;border-bottom:1px solid var(--line);}
+    .col.center{min-height:70vh;order:-1;border-bottom:1px solid var(--line);}
+  }
+
+  .colhead{
+    font-size:11px;color:var(--text-secondary);margin-bottom:14px;
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+  }
+
+  /* ---------- FORM ---------- */
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:11.5px;color:var(--text-secondary);margin-bottom:4px;}
+  .field input,.field select,.field textarea{
+    width:100%;background:var(--panel);border:1px solid var(--panel-border);
+    color:var(--text);padding:8px 9px;border-radius:3px;
+  }
+  .field textarea{resize:vertical;min-height:58px;line-height:1.5;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{
+    border:1px solid var(--panel-border);background:var(--panel);color:var(--text-secondary);
+    padding:5px 9px;font-size:11.5px;border-radius:3px;
+  }
+  .chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .hint{font-size:11px;color:var(--text-secondary);margin-top:6px;line-height:1.5;}
+
+  /* ---------- CHAT ---------- */
+  .chat-scroll{flex:1 1 auto;overflow-y:auto;padding:22px 24px 10px;min-height:0;}
+  @media (max-width:1100px){ .chat-scroll{max-height:60vh;} }
+  .msg{margin-bottom:18px;max-width:78ch;}
+  .msg .who{font-size:10.5px;color:var(--text-secondary);margin-bottom:5px;}
+  .msg .body{
+    border:1px solid var(--panel-border);background:var(--panel);
+    padding:11px 14px;border-radius:3px;white-space:pre-wrap;word-wrap:break-word;
+    box-shadow:var(--shadow);font-size:13.5px;
+  }
+  .msg.user{margin-left:auto;}
+  .msg.user .who{text-align:right;}
+  .msg.user .body{background:var(--bubble-user);color:var(--bubble-user-text);border-color:var(--bubble-user);}
+  .msg.system .body{border-left:3px solid var(--accent);}
+  .msg.error .body{border-left:3px solid var(--fail);color:var(--fail);}
+  .msg .stagetag{
+    display:inline-block;font-size:10px;padding:1px 6px;border:1px solid var(--accent);
+    color:var(--accent);margin-left:6px;
+  }
+  .typing{display:flex;gap:4px;align-items:center;color:var(--text-secondary);font-size:12px;}
+  .typing i{width:5px;height:5px;background:var(--rail);border-radius:50%;display:inline-block;animation:blink 1.2s infinite;}
+  .typing i:nth-child(2){animation-delay:.2s;} .typing i:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,60%,100%{opacity:.25;}30%{opacity:1;}}
+  @media (prefers-reduced-motion:reduce){ .typing i{animation:none;opacity:.6;} }
+
+  /* approval card inside chat */
+  .approval{
+    border:1px solid var(--accent);background:var(--accent-soft);padding:14px 16px;
+    max-width:78ch;margin-bottom:18px;
+  }
+  .approval h4{font-size:13.5px;margin-bottom:8px;}
+  .approval .rows{font-size:12.5px;color:var(--text-secondary);margin-bottom:12px;}
+  .approval .rows div{padding:2px 0;}
+  .approval .rows b{color:var(--text);font-weight:500;}
+  .approval .acts{display:flex;gap:8px;flex-wrap:wrap;}
+  .approval.done{opacity:.6;border-color:var(--panel-border);background:var(--panel);}
+
+  /* composer */
+  .composer{
+    border-top:1px solid var(--line);padding:12px 18px 16px;background:var(--bg);
+    flex:0 0 auto;
+  }
+  .composer-inner{display:flex;gap:10px;align-items:flex-end;}
+  .composer textarea{
+    flex:1;background:var(--panel);border:1px solid var(--panel-border);color:var(--text);
+    padding:10px 12px;border-radius:3px;resize:none;min-height:46px;max-height:180px;line-height:1.5;
+  }
+  .composer-meta{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-secondary);margin-top:7px;gap:10px;flex-wrap:wrap;}
+
+  /* ---------- PIPELINE STATUS ---------- */
+  .pipeline{list-style:none;margin:0;padding:0;}
+  .pipeline li{
+    display:grid;grid-template-columns:18px 1fr;gap:10px;padding:8px 0;
+    border-left:1px solid var(--rail);margin-left:7px;padding-left:16px;position:relative;
+    font-size:12.5px;color:var(--text-secondary);
+  }
+  .pipeline li::before{
+    content:"";position:absolute;left:-5px;top:14px;width:9px;height:9px;border-radius:50%;
+    background:var(--bg);border:1px solid var(--rail);
+  }
+  .pipeline li .name{font-family:'Space Grotesk',sans-serif;font-size:12.5px;}
+  .pipeline li .sub{font-size:10.5px;}
+  .pipeline li.active{color:var(--text);border-left-color:var(--accent);}
+  .pipeline li.active::before{background:var(--accent);border-color:var(--accent);}
+  .pipeline li.done{color:var(--text);}
+  .pipeline li.done::before{background:var(--pass);border-color:var(--pass);}
+  .pipeline li.failed::before{background:var(--fail);border-color:var(--fail);}
+  .pipeline li.failed{color:var(--fail);}
+  .pipeline li .glyph{display:none;}
+
+  .statline{
+    display:flex;justify-content:space-between;gap:10px;font-size:11.5px;
+    padding:6px 0;border-top:1px dashed var(--line);color:var(--text-secondary);
+  }
+  .statline b{color:var(--text);font-weight:500;}
+
+  /* preview */
+  .preview{
+    border:1px dashed var(--panel-border);background:var(--bg-2);
+    aspect-ratio:9/16;max-height:290px;display:flex;align-items:center;justify-content:center;
+    text-align:center;font-size:11.5px;color:var(--text-secondary);padding:16px;margin-bottom:12px;
+  }
+  .preview video{width:100%;height:100%;object-fit:contain;background:#000;}
+
+  /* ---------- SETTINGS DRAWER ---------- */
+  .drawer-bg{
+    position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;
+  }
+  .drawer-bg.open{display:block;}
+  .drawer{
+    position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--bg);
+    border-left:1px solid var(--line);z-index:51;padding:20px 20px 40px;overflow-y:auto;
+    transform:translateX(100%);transition:transform .18s ease;
+  }
+  .drawer.open{transform:translateX(0);}
+  @media (prefers-reduced-motion:reduce){ .drawer{transition:none;} }
+  .drawer h3{font-size:16px;margin-bottom:6px;}
+  .drawer .hint{margin-bottom:16px;}
+  .drawer code{color:var(--accent);font-size:11.5px;word-break:break-all;}
+  pre.code{
+    background:var(--bg-2);border:1px solid var(--line);padding:12px 14px;overflow-x:auto;
+    font-size:11.5px;line-height:1.6;color:var(--text-secondary);margin:10px 0 16px;
+  }
+  pre.code .k{color:var(--accent);}
+  .switchrow{display:flex;align-items:center;gap:9px;margin:14px 0;font-size:12.5px;}
+  .switchrow input{width:auto;}
+  .banner{
+    border:1px solid var(--wait);color:var(--wait);background:transparent;
+    padding:9px 12px;font-size:11.5px;margin-bottom:14px;line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="mark">AD<span>//</span>OS <span style="color:var(--text-secondary);font-weight:400;font-size:12px;font-family:'IBM Plex Mono',monospace;">console</span></div>
+  <div class="topbar-right">
+    <div class="conn"><span class="dot live" id="connDot"></span><span id="connText">Connecting…</span></div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ============ LEFT: BRIEF ============ -->
+  <aside class="col left">
+    <div class="colhead"><span>Project brief</span><span id="projIdLabel" style="color:var(--rail);"></span></div>
+
+    <div class="field">
+      <label for="f_project">Project name</label>
+      <input id="f_project" placeholder="Autumn coffee launch">
+    </div>
+    <div class="field">
+      <label for="f_product">Product or brand</label>
+      <input id="f_product" placeholder="Nomad Coffee Roasters">
+    </div>
+    <div class="field">
+      <label for="f_audience">Target audience</label>
+      <input id="f_audience" placeholder="University students, 18–25">
+    </div>
+
+    <div class="field">
+      <label>Platform</label>
+      <div class="chips" id="platformChips">
+        <button class="chip" aria-pressed="true" data-v="instagram_reels">Reels</button>
+        <button class="chip" aria-pressed="false" data-v="tiktok">TikTok</button>
+        <button class="chip" aria-pressed="false" data-v="youtube_shorts">Shorts</button>
+        <button class="chip" aria-pressed="false" data-v="youtube">YouTube</button>
+        <button class="chip" aria-pressed="false" data-v="facebook">Facebook</button>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_duration">Duration</label>
+        <select id="f_duration">
+          <option value="6">6 sec</option>
+          <option value="15">15 sec</option>
+          <option value="30" selected>30 sec</option>
+          <option value="60">60 sec</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f_objective">Objective</label>
+        <select id="f_objective">
+          <option value="awareness">Awareness</option>
+          <option value="consideration">Consideration</option>
+          <option value="conversion">Conversion</option>
+          <option value="retention">Retention</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Tone</label>
+      <div class="chips" id="toneChips">
+        <button class="chip" aria-pressed="false" data-v="energetic">Energetic</button>
+        <button class="chip" aria-pressed="false" data-v="youthful">Youthful</button>
+        <button class="chip" aria-pressed="false" data-v="warm">Warm</button>
+        <button class="chip" aria-pressed="false" data-v="premium">Premium</button>
+        <button class="chip" aria-pressed="false" data-v="playful">Playful</button>
+        <button class="chip" aria-pressed="false" data-v="cinematic">Cinematic</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f_assets">Brand assets</label>
+      <input id="f_assets" placeholder="Logo URL, product shots, font files">
+      <div class="hint">Paste links to anything already in your storage bucket.</div>
+    </div>
+
+    <div class="field">
+      <label for="f_constraints">Budget & style constraints</label>
+      <textarea id="f_constraints" placeholder="Brand colors #3B2A1F / #E8C39E. No alcohol references. No health claims. Cap generation spend at $20."></textarea>
+    </div>
+
+    <button class="btn primary" id="sendBrief" style="width:100%;">Send brief to pipeline</button>
+    <div class="hint">Everything here is posted to your n8n webhook as one JSON payload. Leave fields blank and the brief agent will ask for what it actually needs.</div>
+  </aside>
+
+  <!-- ============ CENTER: CHAT ============ -->
+  <section class="col center">
+    <div class="chat-scroll" id="chatScroll" aria-live="polite"></div>
+
+    <div class="composer">
+      <div class="composer-inner">
+        <textarea id="composerInput" rows="1" placeholder="Describe the ad you want, or reply to the system…"></textarea>
+        <button class="btn primary" id="sendMsg">Send</button>
+      </div>
+      <div class="composer-meta">
+        <span>Enter sends · Shift+Enter for a new line</span>
+        <span id="stageLabel">Stage: intake</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RIGHT: STATUS ============ -->
+  <aside class="col right">
+    <div class="colhead"><span>Pipeline</span><span id="pipePct" style="color:var(--rail);">0%</span></div>
+    <ul class="pipeline" id="pipeline">
+      <li data-stage="intake"><span class="glyph"></span><div><div class="name">Intake & validation</div><div class="sub">Brief agent, ad validator</div></div></li>
+      <li data-stage="creative"><span class="glyph"></span><div><div class="name">Creative</div><div class="sub">Director, copy, art direction</div></div></li>
+      <li data-stage="preproduction"><span class="glyph"></span><div><div class="name">Pre-production</div><div class="sub">Storyboard, shot plan</div></div></li>
+      <li data-stage="production"><span class="glyph"></span><div><div class="name">Asset production</div><div class="sub">Image, video, voice, music</div></div></li>
+      <li data-stage="assembly"><span class="glyph"></span><div><div class="name">Assembly</div><div class="sub">Edit list, render</div></div></li>
+      <li data-stage="qc"><span class="glyph"></span><div><div class="name">QC & delivery</div><div class="sub">Four-lane check, repair loop</div></div></li>
+    </ul>
+
+    <div class="colhead" style="margin-top:26px;"><span>Job status</span></div>
+    <div class="statline"><span>Project</span><b id="s_project">—</b></div>
+    <div class="statline"><span>Status</span><b id="s_status">Waiting for brief</b></div>
+    <div class="statline"><span>Scenes rendered</span><b id="s_scenes">0 / 0</b></div>
+    <div class="statline"><span>Assets stored</span><b id="s_assets">0</b></div>
+    <div class="statline"><span>QC attempts</span><b id="s_qc">0 / 3</b></div>
+    <div class="statline"><span>Last update</span><b id="s_updated">—</b></div>
+
+    <div class="colhead" style="margin-top:26px;"><span>Final preview</span></div>
+    <div class="preview" id="previewBox">No cut yet. The rendered video appears here once QC passes.</div>
+
+    <div class="field">
+      <label for="f_feedback">Revision notes</label>
+      <textarea id="f_feedback" placeholder="Cut the second shot. Voice should sound younger. Music is too loud under the VO."></textarea>
+    </div>
+    <button class="btn" id="sendRevision" style="width:100%;">Send revision request</button>
+  </aside>
+</div>
+
+<!-- ============ SETTINGS DRAWER ============ -->
+<div class="drawer-bg" id="drawerBg"></div>
+<aside class="drawer" id="drawer" aria-label="Connection settings">
+  <h3>Connection</h3>
+  <div class="hint">Point this console at your n8n webhook. Settings are stored in this browser only.</div>
+
+  <div class="banner" id="cspBanner">
+    Deployed on Vercel these default to the built-in proxy routes <code>/api/message</code> and <code>/api/status</code>, which forward to the n8n URLs in your environment variables. No CORS setup needed on n8n. Override below only to call n8n directly.
+  </div>
+
+  <div class="field">
+    <label for="cfg_webhook">POST endpoint</label>
+    <input id="cfg_webhook" placeholder="/api/message">
+  </div>
+  <div class="field">
+    <label for="cfg_status">GET status endpoint — polling</label>
+    <input id="cfg_status" placeholder="/api/status">
+  </div>
+  <div class="field">
+    <label for="cfg_token">Auth header value — optional</label>
+    <input id="cfg_token" placeholder="Bearer …">
+    <div class="hint">Sent as <code>Authorization</code>.</div>
+  </div>
+  <div class="field">
+    <label for="cfg_poll">Poll interval — seconds</label>
+    <input id="cfg_poll" type="number" min="2" max="120" value="6">
+  </div>
+
+  <div class="switchrow">
+    <input type="checkbox" id="cfg_demo" checked>
+    <label for="cfg_demo" style="margin:0;color:var(--text);font-size:12.5px;">Demo mode — simulate the pipeline locally without a webhook</label>
+  </div>
+
+  <div style="display:flex;gap:8px;margin:18px 0 26px;">
+    <button class="btn primary" id="saveCfg">Save</button>
+    <button class="btn" id="testCfg">Test connection</button>
+    <button class="btn ghost" id="closeDrawer">Close</button>
+  </div>
+
+  <h3 style="font-size:14px;">What the console posts</h3>
+  <pre class="code">POST /webhook/adops/message
+{
+  <span class="k">"project_id"</span>: "proj_k3f9a2",
+  <span class="k">"action"</span>: "message" | "brief" | "approve"
+             | "request_changes" | "revision",
+  <span class="k">"stage"</span>: "intake",
+  <span class="k">"message"</span>: "free text from the user",
+  <span class="k">"brief"</span>: {
+    "project_name": "", "product": "",
+    "target_audience": "", "platform": [],
+    "duration_seconds": 30, "objective": "",
+    "tone": [], "assets": [], "constraints": ""
+  },
+  <span class="k">"timestamp"</span>: "2026-09-16T10:00:00Z"
+}</pre>
+
+  <h3 style="font-size:14px;">What it expects back</h3>
+  <pre class="code">{
+  <span class="k">"project_id"</span>: "proj_k3f9a2",
+  <span class="k">"stage"</span>: "creative",
+  <span class="k">"status"</span>: "CREATIVE_PENDING_APPROVAL",
+  <span class="k">"reply"</span>: "text shown in the chat",
+  <span class="k">"approval"</span>: {
+    "required": true,
+    "title": "Creative concept",
+    "fields": { "Big idea": "…", "Hook": "…" }
+  },
+  <span class="k">"progress"</span>: {
+    "scenes_done": 3, "scenes_total": 6,
+    "assets": 14, "qc_attempts": 1
+  },
+  <span class="k">"video_url"</span>: null
+}</pre>
+  <div class="hint">Any field can be omitted. <code>reply</code> alone is enough to get a working chat loop; add the rest as each workflow comes online.</div>
+</aside>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- storage helpers (safe) ---------- */
+  function load(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:v; }catch(e){ return d; } }
+  function save(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+  var cfg = {
+    webhook: load('adops_webhook','/api/message'),
+    status:  load('adops_status','/api/status'),
+    token:   load('adops_token',''),
+    poll:    parseInt(load('adops_poll','6'),10) || 6,
+    demo:    load('adops_demo','0') === '1'
+  };
+
+  var state = {
+    projectId: 'proj_' + Math.random().toString(36).slice(2,8),
+    stage: 'intake',
+    status: 'Waiting for brief',
+    pollTimer: null,
+    busy: false,
+    demoStep: 0
+  };
+
+  var STAGES = ['intake','creative','preproduction','production','assembly','qc'];
+
+  var $ = function(id){ return document.getElementById(id); };
+  var chat = $('chatScroll');
+
+  /* ---------- chat rendering ---------- */
+  function addMsg(role, text, stage){
+    var wrap = document.createElement('div');
+    wrap.className = 'msg ' + role;
+    var who = document.createElement('div');
+    who.className = 'who';
+    who.textContent = role === 'user' ? 'You' : (role === 'error' ? 'Connection' : 'Pipeline');
+    if(stage && role !== 'user'){
+      var tag = document.createElement('span');
+      tag.className = 'stagetag';
+      tag.textContent = stage;
+      who.appendChild(tag);
+    }
+    var body = document.createElement('div');
+    body.className = 'body';
+    body.textContent = text;
+    wrap.appendChild(who); wrap.appendChild(body);
+    chat.appendChild(wrap);
+    chat.scrollTop = chat.scrollHeight;
+    return wrap;
+  }
+
+  function addTyping(){
+    var wrap = document.createElement('div');
+    wrap.className = 'msg system';
+    wrap.innerHTML = '<div class="who">Pipeline</div><div class="body"><span class="typing">working<i></i><i></i><i></i></span></div>';
+    chat.appendChild(wrap);
+    chat.scrollTop = chat.scrollHeight;
+    return wrap;
+  }
+
+  function addApproval(ap){
+    var card = document.createElement('div');
+    card.className = 'approval';
+    var h = document.createElement('h4');
+    h.textContent = ap.title || 'Approval needed';
+    card.appendChild(h);
+
+    var rows = document.createElement('div');
+    rows.className = 'rows';
+    var f = ap.fields || {};
+    Object.keys(f).forEach(function(k){
+      var r = document.createElement('div');
+      r.innerHTML = '';
+      var lbl = document.createTextNode(k + ': ');
+      var b = document.createElement('b');
+      b.textContent = String(f[k]);
+      r.appendChild(lbl); r.appendChild(b);
+      rows.appendChild(r);
+    });
+    card.appendChild(rows);
+
+    var acts = document.createElement('div');
+    acts.className = 'acts';
+    var yes = document.createElement('button');
+    yes.className = 'btn primary'; yes.textContent = ap.approve_label || 'Approve & continue';
+    var no = document.createElement('button');
+    no.className = 'btn'; no.textContent = 'Request changes';
+    acts.appendChild(yes); acts.appendChild(no);
+    card.appendChild(acts);
+
+    yes.addEventListener('click', function(){
+      card.classList.add('done'); acts.remove();
+      addMsg('user','Approved — continue.');
+      send({ action:'approve', message:'approved' });
+    });
+    no.addEventListener('click', function(){
+      card.classList.add('done'); acts.remove();
+      $('composerInput').focus();
+      $('composerInput').placeholder = 'What should change?';
+      addMsg('system','Tell me what to change and I\'ll route it back to the right department.', state.stage);
+    });
+
+    chat.appendChild(card);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  /* ---------- status panel ---------- */
+  function setStage(stage){
+    if(STAGES.indexOf(stage) === -1) return;
+    state.stage = stage;
+    var idx = STAGES.indexOf(stage);
+    var items = document.querySelectorAll('#pipeline li');
+    for(var i=0;i<items.length;i++){
+      items[i].classList.remove('active','done','failed');
+      if(i < idx) items[i].classList.add('done');
+      else if(i === idx) items[i].classList.add('active');
+    }
+    $('stageLabel').textContent = 'Stage: ' + stage;
+    $('pipePct').textContent = Math.round((idx / (STAGES.length - 1)) * 100) + '%';
+  }
+
+  function setStatus(txt){
+    state.status = txt;
+    $('s_status').textContent = txt;
+    $('s_updated').textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+
+  function applyProgress(p){
+    if(!p) return;
+    if(p.scenes_total !== undefined) $('s_scenes').textContent = (p.scenes_done||0) + ' / ' + p.scenes_total;
+    if(p.assets !== undefined) $('s_assets').textContent = p.assets;
+    if(p.qc_attempts !== undefined) $('s_qc').textContent = p.qc_attempts + ' / 3';
+  }
+
+  function showVideo(url){
+    var box = $('previewBox');
+    box.innerHTML = '';
+    var v = document.createElement('video');
+    v.src = url; v.controls = true; v.playsInline = true;
+    box.appendChild(v);
+  }
+
+  /* ---------- brief collection ---------- */
+  function chipValues(id){
+    return Array.prototype.slice.call(document.querySelectorAll('#'+id+' .chip'))
+      .filter(function(c){ return c.getAttribute('aria-pressed') === 'true'; })
+      .map(function(c){ return c.dataset.v; });
+  }
+
+  function collectBrief(){
+    return {
+      project_name: $('f_project').value.trim(),
+      product: $('f_product').value.trim(),
+      target_audience: $('f_audience').value.trim(),
+      platform: chipValues('platformChips'),
+      duration_seconds: parseInt($('f_duration').value,10),
+      objective: $('f_objective').value,
+      tone: chipValues('toneChips'),
+      assets: $('f_assets').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
+      constraints: $('f_constraints').value.trim()
+    };
+  }
+
+  /* ---------- connection indicator ---------- */
+  function setConn(kind, text){
+    var d = $('connDot');
+    d.className = 'dot ' + kind;
+    $('connText').textContent = text;
+  }
+  function refreshConn(){
+    if(cfg.demo) setConn('demo','Demo mode');
+    else if(cfg.webhook) setConn('live','Webhook set');
+    else setConn('err','No webhook');
+  }
+
+  /* ---------- the send loop ---------- */
+  function send(payloadExtra){
+    if(state.busy) return;
+    state.busy = true;
+    $('sendMsg').disabled = true;
+
+    var payload = {
+      project_id: state.projectId,
+      action: payloadExtra.action || 'message',
+      stage: state.stage,
+      message: payloadExtra.message || '',
+      brief: collectBrief(),
+      timestamp: new Date().toISOString()
+    };
+
+    var typing = addTyping();
+
+    function finish(){
+      state.busy = false;
+      $('sendMsg').disabled = false;
+      if(typing && typing.parentNode) typing.remove();
+    }
+
+    if(cfg.demo || !cfg.webhook){
+      setTimeout(function(){ finish(); demoRespond(payload); }, 700);
+      return;
+    }
+
+    var headers = {'Content-Type':'application/json'};
+    if(cfg.token) headers['Authorization'] = cfg.token;
+
+    fetch(cfg.webhook, { method:'POST', headers:headers, body: JSON.stringify(payload) })
+      .then(function(r){
+        if(!r.ok) throw new Error('Webhook returned ' + r.status);
+        return r.text();
+      })
+      .then(function(txt){
+        finish();
+        var data;
+        try { data = JSON.parse(txt); } catch(e){ data = { reply: txt }; }
+        handleResponse(data);
+      })
+      .catch(function(err){
+        finish();
+        addMsg('error','Request failed: ' + err.message + '. Check that N8N_WEBHOOK_URL is set in Vercel and that the n8n workflow is active with a Respond to Webhook node.');
+        setConn('err','Request failed');
+      });
+  }
+
+  function handleResponse(data){
+    if(!data) return;
+    if(data.project_id) { state.projectId = data.project_id; $('projIdLabel').textContent = data.project_id; }
+    if(data.stage) setStage(data.stage);
+    if(data.status) setStatus(data.status);
+    if(data.reply) addMsg('system', data.reply, data.stage || state.stage);
+    if(data.approval && data.approval.required) addApproval(data.approval);
+    if(data.progress) applyProgress(data.progress);
+    if(data.video_url) showVideo(data.video_url);
+    setConn('live','Connected');
+    startPolling();
+  }
+
+  /* ---------- optional polling ---------- */
+  function startPolling(){
+    if(cfg.demo || !cfg.status) return;
+    stopPolling();
+    var lastSeen = null; // tracks the updated_at we've already shown
+    state.pollTimer = setInterval(function(){
+      var headers = {};
+      if(cfg.token) headers['Authorization'] = cfg.token;
+      fetch(cfg.status + '?project_id=' + encodeURIComponent(state.projectId), {headers:headers})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.stage) setStage(d.stage);
+          if(d.status) setStatus(d.status);
+          if(d.progress) applyProgress(d.progress);
+          if(d.video_url) showVideo(d.video_url);
+          // Only show a chat message when this update is actually new
+          if(d.reply && d.updated_at && d.updated_at !== lastSeen){
+            lastSeen = d.updated_at;
+            addMsg('system', d.reply, d.stage || state.stage);
+          }
+          if(d.approval && d.approval.required) addApproval(d.approval);
+        })
+        .catch(function(){});
+    }, Math.max(2, cfg.poll) * 1000);
+  }
+  function stopPolling(){ if(state.pollTimer){ clearInterval(state.pollTimer); state.pollTimer = null; } }
+
+  /* ---------- demo pipeline ---------- */
+  function demoRespond(payload){
+    var b = payload.brief;
+    var product = b.product || 'your product';
+    var audience = b.target_audience || 'your audience';
+
+    if(payload.action === 'approve'){
+      state.demoStep++;
+    }
+
+    if(state.demoStep === 0){
+      setStage('intake'); setStatus('BRIEF_PENDING_APPROVAL');
+      addMsg('system','Validated as an advertising request. Here\'s the brief I extracted — approve it and I\'ll hand it to the creative department.', 'intake');
+      addApproval({
+        title:'Creative brief',
+        fields:{
+          'Product': product,
+          'Audience': audience,
+          'Platform': (b.platform[0] || 'instagram_reels'),
+          'Duration': b.duration_seconds + ' sec',
+          'Objective': b.objective,
+          'Tone': (b.tone.join(', ') || 'to be decided')
+        }
+      });
+      state.demoStep = 1;
+      return;
+    }
+    if(state.demoStep === 2){
+      setStage('creative'); setStatus('CREATIVE_PENDING_APPROVAL');
+      addMsg('system','Creative director, copywriter and art director have converged on one concept.', 'creative');
+      addApproval({
+        title:'Creative concept',
+        approve_label:'Approve & produce',
+        fields:{
+          'Big idea':'Before the first class, there is one decision',
+          'Hook':'8:57am. Two doors. One of them is open.',
+          'Story':'A student picks ' + product + ' and the morning changes tempo',
+          'Visual':'Handheld, cool morning light, warm product accents',
+          'CTA':'Try it today'
+        }
+      });
+      return;
+    }
+    if(state.demoStep === 3){
+      setStage('preproduction'); setStatus('PRE_PRODUCTION');
+      applyProgress({scenes_done:0, scenes_total:6, assets:0, qc_attempts:0});
+      addMsg('system','Storyboard built: 6 shots across ' + b.duration_seconds + ' seconds. Moving to asset production.', 'preproduction');
+      setTimeout(function(){
+        setStage('production'); setStatus('PRODUCTION');
+        applyProgress({scenes_done:4, scenes_total:6, assets:11, qc_attempts:0});
+        addMsg('system','Generating: 6 video clips, 1 voiceover track, 1 music bed, 4 SFX. Scene 04 is on retry attempt 2 — transient provider timeout, backing off 30s.', 'production');
+      }, 1800);
+      setTimeout(function(){
+        setStage('assembly'); setStatus('POST_PRODUCTION');
+        applyProgress({scenes_done:6, scenes_total:6, assets:16, qc_attempts:0});
+        addMsg('system','Edit decision list rendered. Music ducked 12 dB under the voiceover, captions burned in, exported at 1080x1920.', 'assembly');
+      }, 3600);
+      setTimeout(function(){
+        setStage('qc'); setStatus('QC');
+        applyProgress({scenes_done:6, scenes_total:6, assets:16, qc_attempts:1});
+        addMsg('system','QC found one issue — music masking the voiceover between 0:04 and 0:09. Routed to the audio department, re-rendered, second pass clean. Ready for your review.', 'qc');
+        setStatus('DELIVERED');
+        addApproval({ title:'Final cut', approve_label:'Approve & deliver', fields:{'Duration':b.duration_seconds+' sec','Format':'9:16 · 1080x1920 · 30fps','QC score':'0.94 — passed','Variants':'9:16, 1:1, 16:9'} });
+      }, 5400);
+      return;
+    }
+
+    addMsg('system','Noted. In demo mode I only simulate the flow — connect your n8n webhook under Connection to run the real pipeline.', state.stage);
+  }
+
+  /* ---------- events ---------- */
+  document.querySelectorAll('.chips').forEach(function(group){
+    group.addEventListener('click', function(e){
+      var c = e.target.closest('.chip');
+      if(!c) return;
+      c.setAttribute('aria-pressed', c.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    });
+  });
+
+  var input = $('composerInput');
+  function autoGrow(){ input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,180)+'px'; }
+  input.addEventListener('input', autoGrow);
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); submitMsg(); }
+  });
+  $('sendMsg').addEventListener('click', submitMsg);
+
+  function submitMsg(){
+    var t = input.value.trim();
+    if(!t) return;
+    addMsg('user', t);
+    input.value=''; autoGrow();
+    send({ action:'message', message:t });
+  }
+
+  $('sendBrief').addEventListener('click', function(){
+    var b = collectBrief();
+    var summary = 'Brief submitted — ' + (b.product || 'unnamed product') + ' for ' + (b.target_audience || 'a general audience') + ', ' + b.duration_seconds + 's on ' + (b.platform.join('/') || 'no platform set') + '.';
+    addMsg('user', summary);
+    $('s_project').textContent = b.project_name || b.product || state.projectId;
+    send({ action:'brief', message: summary });
+  });
+
+  $('sendRevision').addEventListener('click', function(){
+    var t = $('f_feedback').value.trim();
+    if(!t){ $('f_feedback').focus(); return; }
+    addMsg('user','Revision: ' + t);
+    $('f_feedback').value = '';
+    send({ action:'revision', message: t });
+  });
+
+  $('newProject').addEventListener('click', function(){
+    stopPolling();
+    state.projectId = 'proj_' + Math.random().toString(36).slice(2,8);
+    state.stage = 'intake'; state.demoStep = 0;
+    chat.innerHTML = '';
+    $('projIdLabel').textContent = state.projectId;
+    $('s_project').textContent = '—';
+    $('s_scenes').textContent = '0 / 0';
+    $('s_assets').textContent = '0';
+    $('s_qc').textContent = '0 / 3';
+    $('previewBox').textContent = 'No cut yet. The rendered video appears here once QC passes.';
+    setStage('intake'); setStatus('Waiting for brief');
+    greet();
+  });
+
+  /* settings drawer */
+  function openDrawer(){ $('drawer').classList.add('open'); $('drawerBg').classList.add('open'); }
+  function closeDrawer(){ $('drawer').classList.remove('open'); $('drawerBg').classList.remove('open'); }
+  $('openSettings').addEventListener('click', openDrawer);
+  $('closeDrawer').addEventListener('click', closeDrawer);
+  $('drawerBg').addEventListener('click', closeDrawer);
+
+  $('saveCfg').addEventListener('click', function(){
+    cfg.webhook = $('cfg_webhook').value.trim();
+    cfg.status  = $('cfg_status').value.trim();
+    cfg.token   = $('cfg_token').value.trim();
+    cfg.poll    = parseInt($('cfg_poll').value,10) || 6;
+    cfg.demo    = $('cfg_demo').checked;
+    save('adops_webhook',cfg.webhook); save('adops_status',cfg.status);
+    save('adops_token',cfg.token); save('adops_poll',String(cfg.poll));
+    save('adops_demo', cfg.demo ? '1' : '0');
+    refreshConn();
+    closeDrawer();
+    addMsg('system', cfg.demo ? 'Demo mode is on — the pipeline is simulated locally.' : 'Webhook saved. Next message goes to ' + cfg.webhook, state.stage);
+  });
+
+  $('testCfg').addEventListener('click', function(){
+    var url = $('cfg_webhook').value.trim();
+    if(!url){ addMsg('error','Enter a webhook URL first.'); closeDrawer(); return; }
+    var headers = {'Content-Type':'application/json'};
+    var tok = $('cfg_token').value.trim();
+    if(tok) headers['Authorization'] = tok;
+    fetch(url, {method:'POST', headers:headers, body: JSON.stringify({action:'ping', project_id: state.projectId})})
+      .then(function(r){
+        closeDrawer();
+        addMsg('system','Webhook responded with ' + r.status + '.');
+        setConn(r.ok ? 'live' : 'err', r.ok ? 'Connected' : 'HTTP ' + r.status);
+      })
+      .catch(function(e){
+        closeDrawer();
+        addMsg('error','Could not reach the webhook: ' + e.message + '. Check that N8N_WEBHOOK_URL is set in your Vercel environment variables and that the n8n workflow is active.');
+        setConn('err','Unreachable');
+      });
+  });
+
+  /* ---------- init ---------- */
+  function greet(){
+    addMsg('system','Describe the ad you want, or fill in the brief on the left. I\'ll validate the request, extract a brief, and ask only for what\'s actually missing.','intake');
+  }
+
+  $('cfg_webhook').value = cfg.webhook;
+  $('cfg_status').value = cfg.status;
+  $('cfg_token').value = cfg.token;
+  $('cfg_poll').value = cfg.poll;
+  $('cfg_demo').checked = cfg.demo;
+  $('projIdLabel').textContent = state.projectId;
+  setStage('intake');
+  setStatus('Waiting for brief');
+  refreshConn();
+  greet();
+})();
+</script>
+
+</body>
+</html>

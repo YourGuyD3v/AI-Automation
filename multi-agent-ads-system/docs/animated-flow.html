@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Multi Agent Ads System – Animated Flow</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f7f6f2;--card:#fff;--ink:#1f2328;--mut:#6b7280;--line:#c9ccd3;--a:#0f766e;--a2:#d9f2ee;--b:#6d28d9;--b2:#ece4fb;--hot:#e8590c;--lane:#efeee8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--card:#1f2226;--ink:#e8e9ea;--mut:#9aa1ab;--line:#3a3f47;--a:#2dd4bf;--a2:#12413c;--b:#a78bfa;--b2:#2e2250;--hot:#fb923c;--lane:#1a1d21}}
+:root[data-theme="dark"]{--bg:#15171a;--card:#1f2226;--ink:#e8e9ea;--mut:#9aa1ab;--line:#3a3f47;--a:#2dd4bf;--a2:#12413c;--b:#a78bfa;--b2:#2e2250;--hot:#fb923c;--lane:#1a1d21}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:18px 14px 28px}
+h1{font-size:20px;margin:0 0 2px}p.sub{margin:0 0 12px;color:var(--mut);font-size:13px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+button{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
+button.p{background:var(--hot);border-color:var(--hot);color:#fff;font-weight:600}
+label{font-size:12px;color:var(--mut)}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+svg{display:block;min-width:760px;width:100%;height:auto}
+.lane{fill:var(--lane)}.lt{font-size:12px;font-weight:700;letter-spacing:.06em}
+.node rect{fill:var(--card);stroke:var(--line);stroke-width:1.5;transition:all .3s}
+.node text{fill:var(--ink);pointer-events:none}.nt{font-size:12.5px;font-weight:600}.ns{font-size:9.5px;fill:var(--mut)!important}
+.node{cursor:pointer}
+.node.A.done rect{fill:var(--a2);stroke:var(--a)}.node.B.done rect{fill:var(--b2);stroke:var(--b)}
+.node.on rect{stroke:var(--hot);stroke-width:3;filter:drop-shadow(0 0 6px var(--hot))}
+.node.on{animation:pop .5s ease}
+@keyframes pop{50%{transform:scale(1.05)}}
+.node{transform-box:fill-box;transform-origin:center}
+.bd{font-size:9.5px;fill:var(--hot)!important;font-weight:700}
+.edge{fill:none;stroke:var(--line);stroke-width:2}.edge.done{stroke:var(--mut)}
+.dot{fill:var(--hot)}
+.panel{margin-top:12px;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--a);border-radius:10px;padding:12px 14px}
+.panel.B{border-left-color:var(--b)}
+.panel h2{margin:0 0 4px;font-size:16px}.panel .n{font-size:12px;color:var(--mut);margin-bottom:6px}
+.panel code{background:var(--lane);padding:1px 6px;border-radius:5px;font-size:12px;margin-right:4px;display:inline-block;margin-top:3px}
+.bar{height:4px;background:var(--line);border-radius:3px;margin:0 0 10px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--hot);transition:width .4s}
+.note{font-size:12px;color:var(--mut);margin-top:10px}
+</style></head><body><main>
+<h1>Multi Agent Ads System → Production Agent</h1>
+<p class="sub">Animated walkthrough built from your two n8n exports. Click any step to jump to it.</p>
+<div class="ctl"><button class="p" id="play">▶ Play</button><button id="prev">◀ Prev</button><button id="next">Next ▶</button><button id="rst">↺ Restart</button>
+<label>Speed <input type="range" id="spd" min="1" max="4" value="2"></label></div>
+<div class="bar"><i id="pb"></i></div>
+<div class="wrap"><svg id="svg" viewBox="0 0 1000 504" role="img" aria-label="Animated pipeline diagram"></svg></div>
+<div class="panel" id="panel"></div>
+<p class="note">Other Switch states (e.g. status requests) route to “Reply Project Status”. Loop badges: ↺ revise / clarification loop, ↻ per-item loop with polling.</p>
+</main>
+<script>
+const S=[
+// lane A: Multi Agent Ads System
+{L:'A',t:'Client brief',s:'User Input Webhook',n:['User Input Webhook'],d:'Client message arrives at the webhook and starts the run.'},
+{L:'A',t:'Load / create state',s:'Supabase get · create · update',n:['Get a row','If1','Create a row','Update a row6'],d:'Looks up the project row in Supabase; creates it if new, otherwise updates it with the new message.'},
+{L:'A',t:'Route by state',s:'Switch',n:['Switch'],d:'Switch sends the project to the right stage: Intake, Research, Creative, Writing, Storyboard or Production.'},
+{L:'A',t:'Validate idea',s:'Validator Agent',n:['Validator Agent','Simple Memory','OpenAI Validation Model','If'],d:'Checks the advertising idea. If it is unclear the client is asked; otherwise the state advances to Research.'},
+{L:'A',t:'Research',s:'Research Agent + Perplexity',n:['Research Agent','Create a response in Perplexity','OpenAI Research Model'],d:'Researches open questions using Perplexity as a tool and saves findings to the project row.'},
+{L:'A',t:'Creative direction',s:'Creative Agent',b:'↺ client clarification',n:['Creative Agent','Message a model in Anthropic','Needs Client Input','Save Open Questions','Ask Client Questions','Wait'],d:'Develops the creative direction. If questions remain it saves them, asks the client, waits for the reply, then resumes.'},
+{L:'A',t:'Write ad copy',s:'OpenAI · Parse Writing Output',n:['Get a row2','Message a model','Parse Writing Output'],d:'Writes the ad copy from the approved creative direction.'},
+{L:'A',t:'Copy approval',s:'Writing Approved?',b:'↺ revise',n:['Writing Approved','Save Writing Draft','Send Writing Draft','Update a row4'],d:'PROCEED saves the state forward. Otherwise the draft is sent to the client and revised until approved.'},
+{L:'A',t:'Storyboard',s:'OpenAI · Parse Storyboard',n:['Get a row3','Message a model1','Parse Storyboard Output'],d:'Turns approved copy into a scene-by-scene storyboard.'},
+{L:'A',t:'Storyboard approval',s:'If4 (PROCEED?)',b:'↺ revise',n:['If4','Save Storyboard Draft','Update a row5'],d:'Client approves or requests changes to the storyboard.'},
+{L:'A',t:'Call Production Agent',s:'Execute Workflow',n:["Call 'Production Agent'"],d:'Hands the approved storyboard to the Production Agent sub-workflow.'},
+// lane B: Production Agent
+{L:'B',t:'Plan production',s:'AI Agent · Format Raw Json',n:['When Executed by Another Workflow','AI Agent','Format Raw Json','Create a row'],d:'Acts as production manager: plans the shots, audio and edit, and creates the Production Agent row for this production_id.'},
+{L:'B',t:'Images',s:'Seedream via HTTP',b:'↻ loop + poll',n:['Build Image List','Loop Over Items1','Bytedance/seedream Images','Check Completion Status1','Save Image Result','Aggregate'],d:'Builds the image list, generates each image, waits and polls every 15s, then aggregates results into Supabase.'},
+{L:'B',t:'Video clips',s:'Pruna image-to-video',b:'↻ loop + poll',n:['Get a row (Video)','Build Video List','Loop Over Items','Pruna ai Video','Check Completion Status','Save Video Result'],d:'Animates each image into a clip, polling until complete, then saves all clip URLs.'},
+{L:'B',t:'Music',s:'ElevenLabs Music',n:['Get a row (Music)','Elevenlabs Music','Update a row (Music)'],d:'Generates background music for the ad.'},
+{L:'B',t:'Sound effects',s:'ElevenLabs SFX',b:'↻ loop',n:['Get a row (SFX)','Build SFX List','Has SFX?','Loop Over SFX','ElevenLabs SFX','Sort SFX'],d:'Generates each sound effect if any are planned, sorted into timeline order.'},
+{L:'B',t:'Voice-over',s:'ElevenLabs Text to Voice',b:'↻ loop',n:['Get a row1','Build Sound List','Loop Over Items2','Elevenlabs Text to Voice','Sort Voice'],d:'Generates each voice line and sorts them for the timeline.'},
+{L:'B',t:'Edit timeline',s:'Build Edit Timeline',n:['Get a row (Editing)','Build Edit Timeline'],d:'Combines clips, music, SFX and voice into one edit timeline.'},
+{L:'B',t:'Render',s:'Render Video + poll',b:'↻ poll / fail',n:['Render Video','Wait 15 sec (Render)','Check Render','Render Done?','Render Failed?'],d:'Submits the render, polls every 15s; stops with an error if it fails.'},
+{L:'B',t:'Deliver to client',s:'Respond · mark Completed',n:['Edit Fields (Final)','Update a row (Final)','Respond Back To User','Update a row (Completed )'],d:'Saves the final video URL, sends the finished deliverable and project status to the client, and marks the project Completed.'}
+];
+const W=140,H=66,GX=156,X0=40,NS='http://www.w3.org/2000/svg';
+const lanes={A:{y:20,cols:6,h:222,rowH:100,lbl:'MULTI AGENT ADS SYSTEM  ·  brief → validate → research → creative → copy → storyboard'},
+             B:{y:262,cols:6,h:222,rowH:100,lbl:'PRODUCTION AGENT  ·  plan → images → video → music / SFX / voice → edit / render'}};
+const svg=document.getElementById('svg');
+const el=(n,a={},p=svg)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
+for(const k in lanes){const l=lanes[k];el('rect',{class:'lane',x:20,y:l.y,width:960,height:l.h,rx:12});
+ const t=el('text',{class:'lt',x:40,y:l.y+24,fill:k=='A'?'var(--a)':'var(--b)'});t.textContent=l.lbl}
+const cnt={A:0,B:0};
+S.forEach(s=>{const l=lanes[s.L],i=cnt[s.L]++,r=Math.floor(i/l.cols);let c=i%l.cols;if(r%2)c=l.cols-1-c;
+ s.x=X0+c*GX;s.y=l.y+36+r*l.rowH});
+const eg=[];
+for(let i=1;i<S.length;i++){const a=S[i-1],b=S[i];let d;
+ const ax=a.x+W/2,bx=b.x+W/2;
+ if(a.y==b.y)d=a.x<b.x?`M${a.x+W},${a.y+H/2}H${b.x}`:`M${a.x},${a.y+H/2}H${b.x+W}`;
+ else if(ax==bx)d=`M${ax},${a.y+H}V${b.y}`;
+ else{const my=(a.y+H+b.y)/2;d=`M${ax},${a.y+H}V${my}H${bx}V${b.y}`}
+ const p=el('path',{class:'edge',d,'marker-end':'url(#ar)'});eg.push(p)}
+const defs=el('defs');defs.innerHTML='<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#9aa1ab"/></marker>';
+S.forEach((s,i)=>{const g=el('g',{class:`node ${s.L}`});s.g=g;
+ el('rect',{x:s.x,y:s.y,width:W,height:H,rx:9},g);
+ const wr=(t,cw)=>{if(t.length*cw<=118)return[t];const w=t.split(' ');let l='';while(w.length&&(l+' '+w[0]).length*cw<=118)l=(l+' '+w.shift()).trim();return w.length?[l,w.join(' ')]:[l]};
+ const tl=wr((i+1)+'. '+s.t,6.5),sl=wr(s.s,5.2),ty=s.y+(tl.length==1?25:18),sy=(tl.length>1||sl.length==1)?s.y+47:s.y+43;
+ tl.forEach((x,k)=>{el('text',{class:'nt',x:s.x+10,y:ty+k*14},g).textContent=x});
+ sl.forEach((x,k)=>{el('text',{class:'ns',x:s.x+10,y:sy+k*11},g).textContent=x});
+ if(s.b){const b=el('text',{class:'bd',x:s.x+10,y:s.y+60},g);b.textContent=s.b}
+ g.onclick=()=>{pause();go(i)}});
+const dot=el('circle',{class:'dot',r:6,cx:-20,cy:-20});
+let cur=-1,timer=null,playing=false,raf=0;
+const panel=document.getElementById('panel'),pb=document.getElementById('pb');
+function show(i){const s=S[i];panel.className='panel '+s.L;
+ panel.innerHTML=`<h2>Step ${i+1} of ${S.length}: ${s.t}</h2><div class="n">${s.L=='A'?'Multi Agent Ads System':'Production Agent'} workflow</div><div>${s.d}</div><div style="margin-top:6px">${s.n.map(x=>`<code>${x}</code>`).join('')}</div>`;
+ pb.style.width=((i+1)/S.length*100)+'%'}
+function paint(i){S.forEach((s,k)=>{s.g.classList.toggle('done',k<=i);s.g.classList.toggle('on',k==i)});
+ eg.forEach((e,k)=>e.classList.toggle('done',k<i))}
+function travel(i,cb){cancelAnimationFrame(raf);if(i<1){dot.setAttribute('cx',-20);cb&&cb();return}
+ const p=eg[i-1],L=p.getTotalLength(),dur=(900-(+spd.value-2)*250);let t0=null;
+ (function f(t){if(!t0)t0=t;const k=Math.min(1,(t-t0)/dur),pt=p.getPointAtLength(L*k);
+  dot.setAttribute('cx',pt.x);dot.setAttribute('cy',pt.y);
+  if(k<1)raf=requestAnimationFrame(f);else{dot.setAttribute('cx',-20);cb&&cb()}})(performance.now())}
+function go(i,anim){i=Math.max(0,Math.min(S.length-1,i));
+ const done=()=>{cur=i;paint(i);show(i)};
+ if(anim){travel(i,()=>{done();if(playing)timer=setTimeout(()=>cur<S.length-1?go(cur+1,true):pause(),1300-(+spd.value-2)*300)})}
+ else{cancelAnimationFrame(raf);dot.setAttribute('cx',-20);done()}}
+function play(){if(cur>=S.length-1)go(0);playing=true;playBtn.textContent='⏸ Pause';timer=setTimeout(()=>go(cur+1,true),400)}
+function pause(){playing=false;clearTimeout(timer);cancelAnimationFrame(raf);dot.setAttribute('cx',-20);playBtn.textContent='▶ Play'}
+const playBtn=document.getElementById('play'),spd=document.getElementById('spd');
+playBtn.onclick=()=>playing?pause():play();
+document.getElementById('next').onclick=()=>{pause();go(cur+1)};
+document.getElementById('prev').onclick=()=>{pause();go(cur-1)};
+document.getElementById('rst').onclick=()=>{pause();cur=-1;paint(-1);pb.style.width=0;go(0)};
+go(0);
+</script></body></html>
